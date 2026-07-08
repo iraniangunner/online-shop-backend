@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,18 +11,22 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     /**
-     * ثبت‌نام کاربر جدید (اختیاری - اگه لازم داری)
+     * ثبت‌نام مشتری جدید.
+     * توجه: ثبت‌نام عمومی همیشه نقش customer می‌گیرد.
+     * حساب متخصص/ادمین فقط توسط ادمین از پنل مدیریت ساخته می‌شود (کنترلر Admin\SpecialistController).
      */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'phone' => 'required|string|max:20|unique:users,phone',
             'password' => 'required|string|min:6|confirmed',
         ], [
             'password.confirmed' => 'رمز عبور و تکرار آن مطابقت ندارند.',
             'password.min' => 'رمز عبور باید حداقل ۶ کاراکتر باشد.',
             'email.unique' => 'این ایمیل قبلاً ثبت شده است.',
+            'phone.unique' => 'این شماره موبایل قبلاً ثبت شده است.',
             'email.email' => 'فرمت ایمیل صحیح نیست.',
             'name.required' => 'وارد کردن نام الزامی است.',
         ]);
@@ -35,13 +38,19 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => bcrypt($request->password),
+            'phone' => $request->phone,
+            'password' => $request->password,
+            'role' => User::ROLE_CUSTOMER,
         ]);
 
-        return response()->json(['message' => 'User registered successfully', 'user' => $user], 201);
+        return response()->json([
+            'message' => 'ثبت‌نام با موفقیت انجام شد.',
+            'user' => $user,
+        ], 201);
     }
+
     /**
-     * لاگین و گرفتن توکن با Password Grant
+     * لاگین و گرفتن توکن با Password Grant.
      */
     public function login(Request $request)
     {
@@ -54,8 +63,17 @@ class AuthController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
+        if (! Auth::attempt($request->only('email', 'password'))) {
+            return response()->json(['message' => 'ایمیل یا رمز عبور اشتباه است.'], 401);
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+
+        if (! $user->is_active) {
+            Auth::logout();
+
+            return response()->json(['message' => 'حساب کاربری شما غیرفعال شده است.'], 403);
         }
 
         $response = Http::asForm()->post(url('/oauth/token'), [
@@ -68,14 +86,16 @@ class AuthController extends Controller
         ]);
 
         if ($response->failed()) {
-            return response()->json(['message' => 'Could not authenticate'], 401);
+            return response()->json(['message' => 'خطا در احراز هویت. تنظیمات Passport Client رو چک کن.'], 401);
         }
 
-        return response()->json($response->json());
+        return response()->json(array_merge($response->json(), [
+            'user' => $user,
+        ]));
     }
 
     /**
-     * رفرش کردن توکن
+     * رفرش کردن توکن.
      */
     public function refresh(Request $request)
     {
@@ -96,24 +116,24 @@ class AuthController extends Controller
         ]);
 
         if ($response->failed()) {
-            return response()->json(['message' => 'Could not refresh token'], 401);
+            return response()->json(['message' => 'توکن رفرش معتبر نیست.'], 401);
         }
 
         return response()->json($response->json());
     }
 
     /**
-     * لاگ‌اوت و باطل کردن توکن فعلی
+     * لاگ‌اوت و باطل کردن توکن فعلی.
      */
     public function logout(Request $request)
     {
         $request->user()->token()->revoke();
 
-        return response()->json(['message' => 'Successfully logged out']);
+        return response()->json(['message' => 'خروج با موفقیت انجام شد.']);
     }
 
     /**
-     * گرفتن اطلاعات کاربر لاگین‌شده (تست میدل‌ور)
+     * گرفتن اطلاعات کاربر لاگین‌شده.
      */
     public function me(Request $request)
     {

@@ -1,0 +1,29 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('working_hours', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('specialist_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
+            // 0 = یکشنبه ... 6 = شنبه (بر اساس تنظیم start of week در Carbon/config)
+            $table->unsignedTinyInteger('day_of_week');
+            $table->time('start_time');
+            $table->time('end_time');
+            $table->timestamps();
+
+            $table->index(['specialist_id', 'branch_id', 'day_of_week']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('working_hours');
+    }
+};
