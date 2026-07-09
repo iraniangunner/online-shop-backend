@@ -78,7 +78,13 @@ class PaymentController extends Controller
             $appointment->update(['status' => Appointment::STATUS_CONFIRMED]);
         });
 
-        // TODO: ارسال پیامک/ایمیل تأیید نوبت به مشتری + اطلاع به متخصص
+        $appointment->refresh();
+        $appointment->user->notify(new \App\Notifications\AppointmentConfirmed($appointment));
+
+        $specialistUser = $appointment->specialist->user;
+        if ($specialistUser) {
+            $specialistUser->notify(new \App\Notifications\NewAppointmentBooked($appointment));
+        }
 
         return response()->json([
             'message' => 'پرداخت با موفقیت انجام شد و نوبت شما تأیید شد.',

@@ -176,6 +176,11 @@ class AppointmentController extends Controller
             'cancel_reason' => 'لغو توسط مشتری',
         ]);
 
+        $appointment->user->notify(new \App\Notifications\AppointmentCancelled(
+            $appointment,
+            'شما این نوبت را لغو کردید.'
+        ));
+
         // TODO: اگر پرداخت انجام شده و withinFreeCancellation === true،
         // اینجا باید درخواست استرداد وجه (Refund) به درگاه ارسال شود.
 

@@ -65,7 +65,12 @@ class AppointmentController extends Controller
 
         $appointment->update($data);
 
-        // TODO: در این نقطه، ارسال پیامک/ایمیل اطلاع‌رسانی به مشتری قرار می‌گیرد.
+        if ($request->status === Appointment::STATUS_CANCELLED) {
+            $appointment->user->notify(new \App\Notifications\AppointmentCancelled(
+                $appointment,
+                $request->cancel_reason ?: 'این نوبت توسط کلینیک لغو شد.'
+            ));
+        }
 
         return response()->json(['message' => 'وضعیت نوبت به‌روزرسانی شد.', 'appointment' => $appointment]);
     }

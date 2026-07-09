@@ -27,6 +27,10 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/refresh', [AuthController::class, 'refresh']);
+Route::post('/send-otp', [AuthController::class, 'sendOtp']);
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -70,6 +74,9 @@ Route::middleware(['auth:api', 'role:admin'])->prefix('admin')->group(function (
     Route::get('reviews', [AdminReviewController::class, 'index']);
     Route::patch('reviews/{review}/approve', [AdminReviewController::class, 'approve']);
     Route::delete('reviews/{review}', [AdminReviewController::class, 'destroy']);
+
+    Route::get('payments/pending-refunds', [\App\Http\Controllers\Admin\PaymentController::class, 'pendingRefunds']);
+    Route::patch('payments/{payment}/mark-refunded', [\App\Http\Controllers\Admin\PaymentController::class, 'markRefunded']);
 });
 
 /*
