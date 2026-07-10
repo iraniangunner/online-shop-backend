@@ -48,6 +48,7 @@ Route::get('/branches/{branch}', [BranchController::class, 'show']);
 Route::get('/services', [ServiceController::class, 'index']);
 Route::get('/services/{service}', [ServiceController::class, 'show']);
 Route::get('/services/{service}/specialists', [ServiceController::class, 'specialists']);
+Route::get('/specialists', [\App\Http\Controllers\Public\SpecialistController::class, 'index']);
 
 // Payment verify — عمداً public است، چون خودِ authority نقش کلید امنیتی رو داره
 Route::post('/payments/verify', [PaymentController::class, 'verify']);

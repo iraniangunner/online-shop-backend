@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
+use App\Models\Payment;
 use App\Models\Service;
 use App\Services\AvailabilityService;
 use App\Services\ZarinpalService;
@@ -24,7 +25,7 @@ class AppointmentController extends Controller
      */
     public function index(Request $request)
     {
-        $appointments = Appointment::with(['specialist', 'branch', 'services'])
+        $appointments = Appointment::with(['specialist', 'branch', 'services', 'review'])
             ->where('user_id', $request->user()->id)
             ->orderByDesc('starts_at')
             ->paginate(20);
@@ -181,8 +182,19 @@ class AppointmentController extends Controller
             'شما این نوبت را لغو کردید.'
         ));
 
-        // TODO: اگر پرداخت انجام شده و withinFreeCancellation === true،
-        // اینجا باید درخواست استرداد وجه (Refund) به درگاه ارسال شود.
+        // اگر پرداخت انجام شده و داخل بازه‌ی مجاز بازگشت وجه هستیم،
+        // پرداخت رو علامت‌گذاری می‌کنیم تا ادمین دستی از پنل زرین‌پال ریفاندش کنه
+        // (زرین‌پال API عمومی برای استرداد خودکار نداره).
+        $paidPayment = $appointment->payments()->where('status', Payment::STATUS_PAID)->latest()->first();
+
+        if ($paidPayment && $withinFreeCancellation) {
+            $paidPayment->update(['status' => Payment::STATUS_REFUND_PENDING]);
+
+            $admins = \App\Models\User::where('role', \App\Models\User::ROLE_ADMIN)->get();
+            foreach ($admins as $admin) {
+                $admin->notify(new \App\Notifications\RefundNeeded($paidPayment));
+            }
+        }
 
         return response()->json([
             'message' => $withinFreeCancellation
