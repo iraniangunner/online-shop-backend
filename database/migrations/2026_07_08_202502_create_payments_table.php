@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('gateway')->default('zarinpal'); // نام درگاه پرداخت
             $table->string('authority')->nullable();         // کد authority درگاه
             $table->string('ref_id')->nullable();             // کد پیگیری تراکنش موفق
-            $table->enum('status', ['pending', 'paid', 'failed', 'refunded'])->default('pending');
+            $table->enum('status', ['pending', 'paid', 'failed', 'refund_pending', 'refunded'])->default('pending');
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
 
