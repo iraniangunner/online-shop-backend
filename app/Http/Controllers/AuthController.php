@@ -168,7 +168,7 @@ class AuthController extends Controller
         }
 
         // لایه ۳: حداکثر ۱۰ بار در ساعت از هر IP (جلوگیری از سوءاستفاده)
-        $ipKey = 'otp_send_ip_'.$request->ip();
+        $ipKey = 'otp_send_ip_' . $request->ip();
         $ipCount = cache()->get($ipKey, 0);
 
         if ($ipCount >= 10) {
@@ -219,7 +219,7 @@ class AuthController extends Controller
         $mobile = $request->mobile;
 
         // rate limit تلاش‌های اشتباه
-        $attemptsKey = 'otp_verify_attempts_'.$mobile;
+        $attemptsKey = 'otp_verify_attempts_' . $mobile;
         $attempts = cache()->get($attemptsKey, 0);
 
         if ($attempts >= 5) {
@@ -248,9 +248,10 @@ class AuthController extends Controller
 
         if (! $user) {
             $user = User::create([
-                'name' => 'کاربر '.substr($mobile, -4),
+                'name' => 'کاربر ' . substr($mobile, -4),
                 'phone' => $mobile,
                 'phone_verified' => true,
+                'is_active' => true,
                 'email' => null,
                 'password' => bin2hex(random_bytes(16)), // پسورد تصادفی، چون این کاربر با OTP لاگین می‌کنه نه پسورد
                 'role' => User::ROLE_CUSTOMER,
