@@ -92,19 +92,39 @@ class SpecialistController extends Controller
             'is_active' => 'boolean',
             'branch_ids' => 'sometimes|array|min:1',
             'branch_ids.*' => 'exists:branches,id',
+            'service_ids' => 'sometimes|array',
+            'service_ids.*' => 'exists:services,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $specialist->update($validator->safe()->except('branch_ids'));
+        DB::transaction(function () use ($request, $specialist, $validator) {
+            $specialist->update($validator->safe()->except(['branch_ids', 'service_ids']));
 
-        if ($request->has('branch_ids')) {
-            $specialist->branches()->sync($request->branch_ids);
-        }
+            if ($request->has('branch_ids')) {
+                $specialist->branches()->sync($request->branch_ids);
+            }
 
-        return response()->json(['message' => 'متخصص ویرایش شد.', 'specialist' => $specialist->load('branches')]);
+            if ($request->has('service_ids')) {
+                $branchIds = $request->branch_ids ?? $specialist->branches()->pluck('branches.id')->toArray();
+
+                // pivot خدمات رو کامل بازسازی می‌کنیم: برای هر خدمت انتخابی،
+                // توی همه‌ی شعبی که متخصص الان بهشون وصله ثبت می‌شه
+                $specialist->services()->detach();
+                foreach ($request->service_ids as $serviceId) {
+                    foreach ($branchIds as $branchId) {
+                        $specialist->services()->attach($serviceId, ['branch_id' => $branchId]);
+                    }
+                }
+            }
+        });
+
+        return response()->json([
+            'message' => 'متخصص ویرایش شد.',
+            'specialist' => $specialist->fresh()->load('branches', 'services'),
+        ]);
     }
 
     public function destroy(Specialist $specialist)

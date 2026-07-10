@@ -25,12 +25,23 @@ class AppointmentController extends Controller
      */
     public function index(Request $request)
     {
-        $appointments = Appointment::with(['specialist', 'branch', 'services', 'review'])
+        $query = Appointment::with(['specialist', 'branch', 'services', 'review'])
             ->where('user_id', $request->user()->id)
-            ->orderByDesc('starts_at')
-            ->paginate(20);
+            ->orderByDesc('starts_at');
 
-        return response()->json($appointments);
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('starts_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('starts_at', '<=', $request->date_to);
+        }
+
+        return response()->json($query->paginate(20));
     }
 
     public function show(Request $request, Appointment $appointment)
@@ -86,18 +97,12 @@ class AppointmentController extends Controller
 
         try {
             $appointment = DB::transaction(function () use (
-                $request,
-                $services,
-                $startsAt,
-                $endsAt,
-                $totalPrice
+                $request, $services, $startsAt, $endsAt, $totalPrice
             ) {
                 // بررسی نهایی خالی بودن اسلات، این‌بار با لاک روی ردیف‌ها
                 // تا اگر دو نفر هم‌زمان همین ثانیه درخواست بدهند، فقط یکی موفق شود.
                 if (! $this->availabilityService->isSlotStillAvailable(
-                    (int) $request->specialist_id,
-                    $startsAt,
-                    $endsAt
+                    (int) $request->specialist_id, $startsAt, $endsAt
                 )) {
                     abort(409, 'این ساعت لحظاتی پیش توسط شخص دیگری رزرو شد. لطفاً ساعت دیگری انتخاب کنید.');
                 }

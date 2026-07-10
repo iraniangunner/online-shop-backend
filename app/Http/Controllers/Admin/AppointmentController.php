@@ -33,6 +33,14 @@ class AppointmentController extends Controller
             $query->whereDate('starts_at', $request->date);
         }
 
+        if ($request->filled('date_from')) {
+            $query->whereDate('starts_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('starts_at', '<=', $request->date_to);
+        }
+
         return response()->json($query->paginate(20));
     }
 
