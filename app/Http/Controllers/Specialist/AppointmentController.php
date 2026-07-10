@@ -66,10 +66,14 @@ class AppointmentController extends Controller
         $appointment->update($data);
 
         if ($request->status === Appointment::STATUS_CANCELLED) {
-            $appointment->user->notify(new \App\Notifications\AppointmentCancelled(
-                $appointment,
-                'متخصص شما در این ساعت در دسترس نیست. لطفاً نوبت جدیدی رزرو کنید.'
-            ));
+            try {
+                $appointment->user->notify(new \App\Notifications\AppointmentCancelled(
+                    $appointment,
+                    'متخصص شما در این ساعت در دسترس نیست. لطفاً نوبت جدیدی رزرو کنید.'
+                ));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('خطا در ارسال نوتیفیکیشن لغو نوبت', ['error' => $e->getMessage()]);
+            }
         }
 
         return response()->json(['message' => 'وضعیت نوبت به‌روزرسانی شد.', 'appointment' => $appointment]);

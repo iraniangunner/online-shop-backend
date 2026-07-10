@@ -65,6 +65,37 @@ class AvailabilityService
         return $slots;
     }
 
+    /**
+     * از بین N روز آینده (شروع از startDate)، روزهایی که هیچ ساعت خالی‌ای
+     * ندارن (چه به‌خاطر مرخصی، چه به‌خاطر پر بودن کامل نوبت‌ها) رو برمی‌گردونه.
+     * فرانت‌اند از این استفاده می‌کنه تا اون روزها رو توی تقویم غیرفعال نشون بده.
+     *
+     * @param  array<int>  $serviceIds
+     * @return array<string> لیست تاریخ‌ها به فرمت Y-m-d
+     */
+    public function getUnavailableDates(
+        int $specialistId,
+        int $branchId,
+        array $serviceIds,
+        string $startDate,
+        int $days = 14
+    ): array {
+        $unavailable = [];
+        $cursor = Carbon::parse($startDate);
+
+        for ($i = 0; $i < $days; $i++) {
+            $date = $cursor->copy()->addDays($i)->toDateString();
+
+            $slots = $this->getAvailableSlots($specialistId, $branchId, $date, $serviceIds);
+
+            if (empty($slots)) {
+                $unavailable[] = $date;
+            }
+        }
+
+        return $unavailable;
+    }
+
     private function calculateTotalDuration(array $serviceIds): int
     {
         return (int) Service::whereIn('id', $serviceIds)->sum('duration_minutes');

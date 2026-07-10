@@ -86,12 +86,18 @@ class AppointmentController extends Controller
 
         try {
             $appointment = DB::transaction(function () use (
-                $request, $services, $startsAt, $endsAt, $totalPrice
+                $request,
+                $services,
+                $startsAt,
+                $endsAt,
+                $totalPrice
             ) {
                 // بررسی نهایی خالی بودن اسلات، این‌بار با لاک روی ردیف‌ها
                 // تا اگر دو نفر هم‌زمان همین ثانیه درخواست بدهند، فقط یکی موفق شود.
                 if (! $this->availabilityService->isSlotStillAvailable(
-                    (int) $request->specialist_id, $startsAt, $endsAt
+                    (int) $request->specialist_id,
+                    $startsAt,
+                    $endsAt
                 )) {
                     abort(409, 'این ساعت لحظاتی پیش توسط شخص دیگری رزرو شد. لطفاً ساعت دیگری انتخاب کنید.');
                 }
@@ -177,10 +183,14 @@ class AppointmentController extends Controller
             'cancel_reason' => 'لغو توسط مشتری',
         ]);
 
-        $appointment->user->notify(new \App\Notifications\AppointmentCancelled(
-            $appointment,
-            'شما این نوبت را لغو کردید.'
-        ));
+        try {
+            $appointment->user->notify(new \App\Notifications\AppointmentCancelled(
+                $appointment,
+                'شما این نوبت را لغو کردید.'
+            ));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('خطا در ارسال نوتیفیکیشن لغو نوبت', ['error' => $e->getMessage()]);
+        }
 
         // اگر پرداخت انجام شده و داخل بازه‌ی مجاز بازگشت وجه هستیم،
         // پرداخت رو علامت‌گذاری می‌کنیم تا ادمین دستی از پنل زرین‌پال ریفاندش کنه
@@ -192,7 +202,11 @@ class AppointmentController extends Controller
 
             $admins = \App\Models\User::where('role', \App\Models\User::ROLE_ADMIN)->get();
             foreach ($admins as $admin) {
-                $admin->notify(new \App\Notifications\RefundNeeded($paidPayment));
+                try {
+                    $admin->notify(new \App\Notifications\RefundNeeded($paidPayment));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('خطا در ارسال نوتیفیکیشن ریفاند', ['error' => $e->getMessage()]);
+                }
             }
         }
 

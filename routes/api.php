@@ -104,6 +104,7 @@ Route::middleware(['auth:api', 'role:specialist'])->prefix('specialist')->group(
 */
 Route::middleware(['auth:api', 'role:customer'])->group(function () {
     Route::get('available-slots', [AvailabilityController::class, 'index']);
+    Route::get('unavailable-days', [AvailabilityController::class, 'unavailableDays']);
 
     Route::get('appointments', [CustomerAppointmentController::class, 'index']);
     Route::post('appointments', [CustomerAppointmentController::class, 'store']);

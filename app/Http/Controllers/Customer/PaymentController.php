@@ -79,11 +79,16 @@ class PaymentController extends Controller
         });
 
         $appointment->refresh();
-        $appointment->user->notify(new \App\Notifications\AppointmentConfirmed($appointment));
 
-        $specialistUser = $appointment->specialist->user;
-        if ($specialistUser) {
-            $specialistUser->notify(new \App\Notifications\NewAppointmentBooked($appointment));
+        try {
+            $appointment->user->notify(new \App\Notifications\AppointmentConfirmed($appointment));
+
+            $specialistUser = $appointment->specialist->user;
+            if ($specialistUser) {
+                $specialistUser->notify(new \App\Notifications\NewAppointmentBooked($appointment));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('خطا در ارسال نوتیفیکیشن تأیید نوبت', ['error' => $e->getMessage()]);
         }
 
         return response()->json([
