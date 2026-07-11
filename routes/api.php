@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Route;
 | Auth (عمومی)
 |--------------------------------------------------------------------------
 */
+
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/refresh', [AuthController::class, 'refresh']);
@@ -59,6 +60,7 @@ Route::post('/payments/verify', [PaymentController::class, 'verify']);
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:api', 'role:admin'])->prefix('admin')->group(function () {
+    Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index']);
     Route::apiResource('branches', AdminBranchController::class);
     Route::apiResource('service-categories', ServiceCategoryController::class)->except(['show']);
     Route::apiResource('services', AdminServiceController::class);

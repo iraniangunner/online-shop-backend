@@ -1,59 +1,124 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# کلینیک زیبایی — سیستم رزرو نوبت (بک‌اند)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+بک‌اند لاراول برای سیستم رزرو آنلاین نوبت کلینیک زیبایی. شامل مدیریت چندشعبه‌ای، رزرو نوبت با تشخیص تداخل زمانی، پرداخت آنلاین (زرین‌پال)، اطلاع‌رسانی ایمیل/پیامک، و پنل‌های جدای مشتری/متخصص/ادمین.
 
-## About Laravel
+## فناوری‌ها
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| بخش | فناوری |
+|---|---|
+| فریم‌ورک | Laravel 12 |
+| احراز هویت API | Laravel Passport ^13 (Password Grant + Personal Access Tokens) |
+| دیتابیس | MySQL (تست‌ها: SQLite در حافظه) |
+| پرداخت | زرین‌پال (Sandbox/Production) |
+| پیامک | کاوه‌نگار (Verify Lookup، REST مستقیم) |
+| ایمیل | SMTP (توسعه: Mailpit) |
+| تست | PHPUnit (Feature + Unit) |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## پیش‌نیازها
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP >= 8.2 با افزونه‌های: `pdo_mysql`, `pdo_sqlite` (برای تست), `openssl`, `mbstring`
+- Composer
+- MySQL >= 8
+- Node.js (فقط اگه بخوای asset های خودِ لاراول رو build کنی؛ فرانت‌اند این پروژه جدا و با Next.js هست)
 
-## Learning Laravel
+## نصب
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### تنظیم `.env`
 
-## Laravel Sponsors
+```env
+DB_CONNECTION=mysql
+DB_DATABASE=clinic_booking
+DB_USERNAME=root
+DB_PASSWORD=
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# Passport (بعد از php artisan passport:client --password پر کن)
+PASSPORT_PASSWORD_CLIENT_ID=
+PASSPORT_PASSWORD_CLIENT_SECRET=
 
-### Premium Partners
+# زرین‌پال
+ZARINPAL_MERCHANT_ID=
+ZARINPAL_SANDBOX=true
+ZARINPAL_CALLBACK_URL=http://localhost:3000/payment/callback
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# کاوه‌نگار
+KAVENEGAR_API_KEY=
 
-## Contributing
+# ایمیل (توسعه: Mailpit)
+MAIL_MAILER=smtp
+MAIL_HOST=127.0.0.1
+MAIL_PORT=1025
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# آدرس فرانت‌اند (برای لینک‌های ایمیل)
+FRONTEND_URL=http://localhost:3000
 
-## Code of Conduct
+# منطقه‌ی زمانی — حتماً باید تهران باشه، وگرنه ساعت نوبت‌ها اشتباه نمایش داده می‌شه
+APP_TIMEZONE=Asia/Tehran
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### migrate و seed
 
-## Security Vulnerabilities
+```bash
+php artisan migrate:fresh --seed
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Seeder دو شعبه، دو ادمین، دو مشتری، چهار دسته‌بندی، هشت خدمت، و چهار متخصص (با ساعات کاری متفاوت) می‌سازه. همه‌ی پسوردها `password123` هستن — لیست کامل حساب‌ها بعد از اجرای seeder توی ترمینال چاپ می‌شه.
 
-## License
+### ساخت Passport Client
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan passport:client --password
+```
+Client ID و Secret رو توی `.env` بذار، بعد:
+```bash
+php artisan config:clear
+```
+
+⚠️ **این پروژه از Passport v13 استفاده می‌کنه که Password Grant پیش‌فرض غیرفعاله.** حتماً مطمئن شو `Passport::enablePasswordGrant()` توی `AppServiceProvider::boot()` صدا زده شده (از قبل توی این پروژه هست).
+
+## اجرای سرور توسعه
+
+```bash
+$env:PHP_CLI_SERVER_WORKERS=4   # PowerShell — یا export روی لینوکس/مک
+php artisan serve --no-reload
+```
+
+⚠️ **چرا `PHP_CLI_SERVER_WORKERS=4` لازمه؟** چون فلوی لاگین (`/api/login`, `/api/verify-otp`) خودش یه درخواست HTTP داخلی به `/oauth/token` می‌زنه (Password Grant). سرور توسعه‌ی پیش‌فرض PHP تک‌رشته‌ایه، پس این خودارجاعی باعث قفل‌شدن (deadlock) می‌شه مگه چند worker داشته باشه.
+
+برای production، از یه وب‌سرور واقعی (Nginx + PHP-FPM) استفاده کن، نه `php artisan serve`.
+
+## کرون‌جاب (لغو خودکار نوبت پرداخت‌نشده)
+
+```bash
+php artisan schedule:work
+```
+(یا crontab واقعی روی production که هر دقیقه `php artisan schedule:run` رو صدا بزنه)
+
+## اجرای تست‌ها
+
+```bash
+php artisan test
+```
+از یه دیتابیس SQLite جدا (در حافظه) استفاده می‌کنه — کاری به دیتابیس واقعیت نداره. ~۷۰ تست، شامل: منطق ساعت‌های خالی، Auth، فلوی رزرو، تأیید پرداخت، کنترل دسترسی نقش‌ها، OTP، CRUD ادمین، پنل متخصص، Refund.
+
+## ساختار نقش‌ها
+
+| نقش | دسترسی |
+|---|---|
+| `customer` | رزرو/لغو/نظر روی نوبت‌های خودش |
+| `specialist` | مدیریت نوبت‌های خودش، ساعات کاری، مرخصی |
+| `admin` | مدیریت کامل: شعبه، خدمت، متخصص، کاربران، نظرات، ریفاند، داشبورد آماری |
+
+جزئیات کامل endpoint ها توی `API_DOCUMENTATION.md` هست.
+
+## نکات مهم معماری
+
+- **پرداخت**: هر نوبت `pending_payment` می‌شه، بعد پرداخت زرین‌پال تأیید بشه `confirmed` می‌شه. اگه ظرف ۱۵ دقیقه پرداخت نشه، Job خودکار لغوش می‌کنه.
+- **Refund**: نیمه‌خودکاره — سیستم فقط پرداخت رو `refund_pending` علامت می‌زنه؛ ادمین باید دستی از پنل زرین‌پال ریفاند کنه و بعد توی سیستم تأیید کنه (چون API عمومی زرین‌پال ریفاند خودکار نداره).
+- **OTP**: لاگین با موبایل، پسورد واقعی کاربر رو دست‌کاری نمی‌کنه (یه ستون جدا `otp_password` داره).
+- **تداخل زمانی**: با `lockForUpdate()` هنگام ثبت نهایی نوبت چک می‌شه (نه فقط موقع نمایش لیست ساعت‌های خالی) تا race condition پیش نیاد.

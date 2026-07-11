@@ -50,7 +50,7 @@ class AppointmentController extends Controller
             return response()->json(['message' => 'این نوبت متعلق به شما نیست.'], 403);
         }
 
-        return response()->json($appointment->load(['specialist', 'branch', 'services', 'payments']));
+        return response()->json($appointment->load(['specialist', 'branch', 'services', 'payments', 'review']));
     }
 
     /**
@@ -97,12 +97,18 @@ class AppointmentController extends Controller
 
         try {
             $appointment = DB::transaction(function () use (
-                $request, $services, $startsAt, $endsAt, $totalPrice
+                $request,
+                $services,
+                $startsAt,
+                $endsAt,
+                $totalPrice
             ) {
                 // بررسی نهایی خالی بودن اسلات، این‌بار با لاک روی ردیف‌ها
                 // تا اگر دو نفر هم‌زمان همین ثانیه درخواست بدهند، فقط یکی موفق شود.
                 if (! $this->availabilityService->isSlotStillAvailable(
-                    (int) $request->specialist_id, $startsAt, $endsAt
+                    (int) $request->specialist_id,
+                    $startsAt,
+                    $endsAt
                 )) {
                     abort(409, 'این ساعت لحظاتی پیش توسط شخص دیگری رزرو شد. لطفاً ساعت دیگری انتخاب کنید.');
                 }
